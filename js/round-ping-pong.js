@@ -59,7 +59,7 @@ function main(){
 	y_ctr = canvas_obj.height/2;
 	radius = x_ctr/2;
 	
-	var bg_obj = new background(
+	var bg_obj = new Background(
 				canvas_obj,
 				x_ctr, y_ctr,
 				radius
@@ -71,7 +71,7 @@ function main(){
 	var racket_radius = radius - racket_height - offset;
 	var racket_width_deg = 30;
 	var racket_pos_deg = 180;
-	var racket_obj =  new racket(
+	var racket_obj =  new Racket(
 				canvas_obj,
 				x_ctr, y_ctr,
 				racket_radius,
@@ -80,35 +80,87 @@ function main(){
 				racket_pos_deg
 			);
 	
+	var ball_radius = 30;
+	var ball_obj = new Ball(
+				canvas_obj,
+				ball_radius,
+				x_ctr, y_ctr
+			);
+
 	//Initial Drawing
 	bg_obj.draw();
 	racket_obj.draw();
+	ball_obj.draw();
 	
 	//Move things
-	animate(canvas_obj, bg_obj, racket_obj);
+	animate(canvas_obj, bg_obj, racket_obj, ball_obj);
 }
 
-function animate(canvas_obj, bg_obj, racket_obj){
+function animate(canvas_obj, bg_obj, racket_obj, ball_obj){
 	function run(timestamp){
-		racket_obj.ctx.clearRect(0,0, racket_obj.canvas_obj.width, racket_obj.canvas_obj.height);
+		//Cleaning the canvas
+		racket_obj.ctx.clearRect(
+					  0, 0,
+					  racket_obj.canvas_obj.width,
+					  racket_obj.canvas_obj.height
+					);
+		
+		
+		//Updating the position of racket.
 		cur_pos = racket_obj.pos_deg;
 		new_pos = (cur_pos + 0.5) % 360;
 		racket_obj.draw(new_pos);
+
+		//update position of ball
+		/*
+		ball_bg_rad_diff = bg_obj.radius - ball_obj.radius;
+		rad_sq = Math.pow(ball_bg_rad_diff, 2);
+		
+		//TODO: logic for moving the ball
+
+		*/
+		ball_obj.draw();
+
+		//Draw new background
 		bg_obj.draw();
 		window.requestAnimationFrame(run);
 	}
 	animation_ctrl = window.requestAnimationFrame(run);
 }
 
-function background(canvas_obj, x_ctr, y_ctr, radius){
+function Ball(canvas_obj, radius, x_ctr, y_ctr){
 	this.canvas_obj = canvas_obj;
 	this.ctx = canvas_obj.getContext("2d");
+	this.x_ctr = (typeof x_ctr === "undefined")? 0 : x_ctr;
+	this.y_ctr = (typeof y_ctr === "undefined")? 0 : y_ctr;
+	this.radius = radius;
+}
+
+Ball.prototype.draw = function(x_ctr, y_ctr){
+	if(typeof x_ctr !== "undefined"){
+		this.x_ctr = x_ctr;
+	}
+	if(typeof y_ctr !== "undefined"){
+		this.y_ctr = y_ctr;
+	}
+	this.ctx.beginPath();
+	this.ctx.arc(
+		this.x_ctr, this.y_ctr,
+		this.radius,
+		0, Math.PI * 360
+	);
+	this.ctx.stroke();
+}
+
+function Background(canvas_obj, x_ctr, y_ctr, radius){
+	this.canvas_obj = canvas_obj;
+	this.ctx = canvas_obj.getContext("2d");	
 	this.x_ctr = x_ctr;
 	this.y_ctr = y_ctr;
 	this.radius = radius;
 }
 
-background.prototype.draw = function(){
+Background.prototype.draw = function(){
 	this.ctx.beginPath();
 	this.ctx.arc(
 		this.x_ctr,this.y_ctr,
@@ -118,7 +170,7 @@ background.prototype.draw = function(){
 	this.ctx.stroke();
 }
 
-function racket(canvas_obj, x_ctr, y_ctr, radius, height, width_deg, pos_deg){
+function Racket(canvas_obj, x_ctr, y_ctr, radius, height, width_deg, pos_deg){
 	this.canvas_obj = canvas_obj;
 	this.ctx = canvas_obj.getContext("2d");
 	this.x_ctr = x_ctr;
@@ -130,7 +182,7 @@ function racket(canvas_obj, x_ctr, y_ctr, radius, height, width_deg, pos_deg){
 }
 
 //width and pos in degrees
-racket.prototype.draw = function(pos, width){
+Racket.prototype.draw = function(pos, width){
 	/*
 	IMP INFO
 	--------
@@ -167,7 +219,7 @@ racket.prototype.draw = function(pos, width){
 	this.draw_arc_line(pos-width);
 }
 
-racket.prototype.draw_arc = function (x,y,radius,start_angle, end_angle){
+Racket.prototype.draw_arc = function (x,y,radius,start_angle, end_angle){
 	this.ctx.beginPath();
 	this.ctx.arc(
 		x,y,
@@ -178,7 +230,7 @@ racket.prototype.draw_arc = function (x,y,radius,start_angle, end_angle){
 	this.ctx.stroke();
 }
 
-racket.prototype.draw_arc_line = function(angle){
+Racket.prototype.draw_arc_line = function(angle){
 	this.ctx.beginPath();
 	x_src = this.radius * Math.cos(to_rad(angle)) + this.x_ctr;
 	y_src = this.radius * Math.sin(to_rad(angle)) + this.y_ctr;
