@@ -11,8 +11,6 @@
  
 * Add User control
   Add move left and move right after setting boundaries for the rackets.
-
-* Create ball
 */
 
 /*
@@ -93,39 +91,63 @@ function main(){
 	ball_obj.draw();
 	
 	//Move things
-	animate(canvas_obj, bg_obj, racket_obj, ball_obj);
+	var animate_obj = new AnimationController (canvas_obj, bg_obj, racket_obj, ball_obj);
+	animate_obj.animate();
+
+	$(document).bind("click", function(){
+		if( animate_obj.animation_ctrl == null){
+			animate_obj.animate();
+		}else{
+			animate_obj.pause();
+		}
+	});
 }
 
-function animate(canvas_obj, bg_obj, racket_obj, ball_obj){
-	function run(timestamp){
-		//Cleaning the canvas
-		racket_obj.ctx.clearRect(
-					  0, 0,
-					  racket_obj.canvas_obj.width,
-					  racket_obj.canvas_obj.height
-					);
-		
-		
-		//Updating the position of racket.
-		cur_pos = racket_obj.pos_deg;
-		new_pos = (cur_pos + 0.5) % 360;
-		racket_obj.draw(new_pos);
+function AnimationController(canvas_obj, bg_obj, racket_obj, ball_obj){
+	this.canvas_obj = canvas_obj;
+	this.ctx = canvas_obj.getContext("2d");
+	this.bg_obj = bg_obj;
+	this.racket_obj = racket_obj;
+	this.ball_obj = ball_obj;
+	this.animation_ctrl = null;
+}
 
-		//update position of ball
-		/*
-		ball_bg_rad_diff = bg_obj.radius - ball_obj.radius;
-		rad_sq = Math.pow(ball_bg_rad_diff, 2);
-		
-		//TODO: logic for moving the ball
+AnimationController.prototype.animate = function(){
+	this.animation_ctrl = window.requestAnimationFrame(this.run.bind(this));
+}
 
-		*/
-		ball_obj.draw();
+AnimationController.prototype.run = function(timestamp){	
+	//Cleaning the canvas
+	this.ctx.clearRect(
+		0, 0,
+		this.canvas_obj.width,
+		this.canvas_obj.height
+	);
+	
+	//Updating the position of racket.
+	cur_pos = this.racket_obj.pos_deg;
+	new_pos = (cur_pos + 0.5) % 360;
+	this.racket_obj.draw(new_pos);
+	
+	//update position of ball
+	/*
+	ball_bg_rad_diff = bg_obj.radius - ball_obj.radius;
+	rad_sq = Math.pow(ball_bg_rad_diff, 2);
+	
+	//TODO: logic for moving the ball
+	
+	*/
+	this.ball_obj.draw();
+	
+	//Draw new background
+	this.bg_obj.draw();
+	this.animation_ctrl = window.requestAnimationFrame(this.run.bind(this));
+}
 
-		//Draw new background
-		bg_obj.draw();
-		window.requestAnimationFrame(run);
-	}
-	animation_ctrl = window.requestAnimationFrame(run);
+AnimationController.prototype.pause = function(){
+	//log(this.animation_ctrl);
+	window.cancelAnimationFrame(this.animation_ctrl);
+	this.animation_ctrl = null;
 }
 
 function Ball(canvas_obj, radius, x_ctr, y_ctr){
