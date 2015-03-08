@@ -97,8 +97,10 @@ function main(){
 	$(document).bind("click", function(){
 		if( animate_obj.animation_ctrl == null){
 			animate_obj.animate();
+			toast("Play");
 		}else{
 			animate_obj.pause();
+			toast("Pause");
 		}
 	});
 }
