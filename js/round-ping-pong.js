@@ -77,12 +77,20 @@ function main(){
 				racket_width_deg,
 				racket_pos_deg
 			);
-	
+
+	//Ball declarations
 	var ball_radius = 30;
+	
+	var boundary_obj = new Boundary(
+		x_ctr, y_ctr,
+		radius - ball_radius
+	);
+	
 	var ball_obj = new Ball(
 				canvas_obj,
 				ball_radius,
-				x_ctr, y_ctr
+				x_ctr, y_ctr,
+				boundary_obj
 			);
 
 	//Initial Drawing
@@ -94,6 +102,7 @@ function main(){
 	var animate_obj = new AnimationController (canvas_obj, bg_obj, racket_obj, ball_obj);
 	animate_obj.animate();
 
+	//Binding mouse click callbacks
 	$(document).bind("click", function(){
 		if( animate_obj.animation_ctrl == null){
 			animate_obj.animate();
@@ -129,7 +138,7 @@ AnimationController.prototype.run = function(timestamp){
 	//Updating the position of racket.
 	cur_pos = this.racket_obj.pos_deg;
 	new_pos = (cur_pos + 0.5) % 360;
-	this.racket_obj.draw(new_pos);
+	//this.racket_obj.draw(new_pos);
 	
 	//update position of ball
 	/*
@@ -139,6 +148,7 @@ AnimationController.prototype.run = function(timestamp){
 	//TODO: logic for moving the ball
 	
 	*/
+	this.ball_obj.move();
 	this.ball_obj.draw();
 	
 	//Draw new background
@@ -152,12 +162,17 @@ AnimationController.prototype.pause = function(){
 	this.animation_ctrl = null;
 }
 
-function Ball(canvas_obj, radius, x_ctr, y_ctr){
+function Ball(canvas_obj, radius, x_ctr, y_ctr, boundary_obj){
 	this.canvas_obj = canvas_obj;
 	this.ctx = canvas_obj.getContext("2d");
 	this.x_ctr = (typeof x_ctr === "undefined")? 0 : x_ctr;
 	this.y_ctr = (typeof y_ctr === "undefined")? 0 : y_ctr;
 	this.radius = radius;
+	this.boundary_obj = boundary_obj;
+
+	//x & y increments
+	this.x_inc = 1;
+	this.y_inc = 1;
 }
 
 Ball.prototype.draw = function(x_ctr, y_ctr){
@@ -174,6 +189,29 @@ Ball.prototype.draw = function(x_ctr, y_ctr){
 		0, Math.PI * 360
 	);
 	this.ctx.stroke();
+}
+
+Ball.prototype.move = function(){
+	//Equation is used boundary circle.
+	/*
+	TODO:
+	Have to consider the angle to rebound.
+	*/
+	
+	var x = this.x_ctr;
+	var y = this.y_ctr;
+	var x1 = this.boundary_obj.x_ctr;
+	var y1 = this.boundary_obj.y_ctr
+	var radius = this.boundary_obj.radius;
+	LHS = Math.pow((x - x1), 2) + Math.pow((y - y1), 2);
+	RHS = Math.pow(radius, 2);
+
+	if( LHS >= RHS ){
+		this.x_inc *= -1;
+		this.y_inc *= -1;
+	}
+	this.x_ctr += this.x_inc;
+	this.y_ctr += this.y_inc;
 }
 
 function Background(canvas_obj, x_ctr, y_ctr, radius){
@@ -266,4 +304,10 @@ Racket.prototype.draw_arc_line = function(angle){
 	this.ctx.lineTo(x_dest, y_dest);
 
 	this.ctx.stroke();
+}
+
+function Boundary(x_ctr, y_ctr, radius){
+	this.x_ctr = x_ctr;
+	this.y_ctr = y_ctr;
+	this.radius = radius;
 }
