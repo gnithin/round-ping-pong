@@ -28,6 +28,10 @@ function to_rad(deg){
 	return (deg * (Math.PI/180));
 }
 
+function to_deg(rad){
+	return (rad * (180/Math.PI));
+}
+
 function log(str){
 	console.log(str);
 }
@@ -153,7 +157,7 @@ AnimationController.prototype.run = function(timestamp){
 	
 	//Draw new background
 	this.bg_obj.draw();
-	this.animation_ctrl = window.requestAnimationFrame(this.run.bind(this));
+	//this.animation_ctrl = window.requestAnimationFrame(this.run.bind(this));
 }
 
 AnimationController.prototype.pause = function(){
@@ -173,6 +177,8 @@ function Ball(canvas_obj, radius, x_ctr, y_ctr, boundary_obj){
 	//x & y increments
 	this.x_inc = 1;
 	this.y_inc = 1;
+	this.deg = 120;
+	this.bg_radius = boundary_obj.radius + this.radius
 }
 
 Ball.prototype.draw = function(x_ctr, y_ctr){
@@ -197,21 +203,53 @@ Ball.prototype.move = function(){
 	TODO:
 	Have to consider the angle to rebound.
 	*/
-	
+	//Rebound condition
 	var x = this.x_ctr;
 	var y = this.y_ctr;
 	var x1 = this.boundary_obj.x_ctr;
-	var y1 = this.boundary_obj.y_ctr
+	var y1 = this.boundary_obj.y_ctr;
+	
+	log(x - x1);
+	log(y - y1);
+
 	var radius = this.boundary_obj.radius;
 	LHS = Math.pow((x - x1), 2) + Math.pow((y - y1), 2);
 	RHS = Math.pow(radius, 2);
 
 	if( LHS >= RHS ){
-		this.x_inc *= -1;
-		this.y_inc *= -1;
+		m_bg_circle = (y-y1)/(x-x1);
+		m = Math.tan(this.deg);
+		rad_diff = Math.atan(
+			(m_bg_circle - m) / (1 - (m_bg_circle * m))
+		)
+		if(rad_diff < 0){
+			rad_diff = -rad_diff;
+		}
+		
+		var deg_diff = to_deg(rad_diff);
+		log(this.deg);
+		
+		log(to_deg(Math.atan(m_bg_circle)));
+		log("Deg Diff = " + JSON.stringify(deg_diff));
+		
+		var disp = to_deg(
+			Math.atan(
+				(-1)/(Math.tan(this.deg))
+			)
+		);
+		this.deg = this.deg % 360;
+		if(this.deg < 0){
+			this.deg = Math.abs(180 - Math.abs(this.deg));
+		}
+		
+		this.deg = disp - deg_diff;
+		this.deg = 330;
+		log(this.deg);
 	}
-	this.x_ctr += this.x_inc;
-	this.y_ctr += this.y_inc;
+	//Increment condition
+	this.x_ctr +=  Math.cos(to_rad(this.deg));
+	this.y_ctr +=  Math.sin(to_rad(this.deg));
+	
 }
 
 function Background(canvas_obj, x_ctr, y_ctr, radius){
