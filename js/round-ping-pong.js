@@ -11,6 +11,8 @@
  
 * Add User control
   Add move left and move right after setting boundaries for the rackets.
+
+* Store racket info in ball, and use it in ball movement
 */
 
 /*
@@ -90,10 +92,13 @@ function main(){
 		radius - ball_radius
 	);
 	
+	var ball_offset_x = -30;
+	var ball_offset_y = 30;
+
 	var ball_obj = new Ball(
 				canvas_obj,
 				ball_radius,
-				x_ctr, y_ctr,
+				x_ctr + ball_offset_x , y_ctr + ball_offset_y,
 				boundary_obj
 			);
 
@@ -139,25 +144,19 @@ AnimationController.prototype.run = function(timestamp){
 		this.canvas_obj.height
 	);
 	
-	//Updating the position of racket.
+	//Updating the position of the Racket.
+	//TODO: Make it event driven.
 	cur_pos = this.racket_obj.pos_deg;
 	new_pos = (cur_pos + 0.5) % 360;
 	//this.racket_obj.draw(new_pos);
 	
-	//update position of ball
-	/*
-	ball_bg_rad_diff = bg_obj.radius - ball_obj.radius;
-	rad_sq = Math.pow(ball_bg_rad_diff, 2);
-	
-	//TODO: logic for moving the ball
-	
-	*/
+	//Updating the position of the Ball.
 	this.ball_obj.move();
 	this.ball_obj.draw();
 	
 	//Draw new background
 	this.bg_obj.draw();
-	//this.animation_ctrl = window.requestAnimationFrame(this.run.bind(this));
+	this.animation_ctrl = window.requestAnimationFrame(this.run.bind(this));
 }
 
 AnimationController.prototype.pause = function(){
@@ -177,7 +176,7 @@ function Ball(canvas_obj, radius, x_ctr, y_ctr, boundary_obj){
 	//x & y increments
 	this.x_inc = 1;
 	this.y_inc = 1;
-	this.deg = 120;
+	this.deg = 90;
 	this.bg_radius = boundary_obj.radius + this.radius
 }
 
@@ -203,48 +202,86 @@ Ball.prototype.move = function(){
 	TODO:
 	Have to consider the angle to rebound.
 	*/
-	//Rebound condition
-	var x = this.x_ctr;
-	var y = this.y_ctr;
-	var x1 = this.boundary_obj.x_ctr;
-	var y1 = this.boundary_obj.y_ctr;
-	
-	log(x - x1);
-	log(y - y1);
+	var ball_x = this.x_ctr;
+	var ball_y = this.y_ctr;
+	var bound_x = this.boundary_obj.x_ctr;
+	var bound_y = this.boundary_obj.y_ctr;
 
-	var radius = this.boundary_obj.radius;
-	LHS = Math.pow((x - x1), 2) + Math.pow((y - y1), 2);
-	RHS = Math.pow(radius, 2);
+	var bound_radius = this.boundary_obj.radius;
+
+	LHS = Math.pow((ball_x - bound_x), 2) + Math.pow((ball_y - bound_y), 2);
+	RHS = Math.pow(bound_radius, 2);
 
 	if( LHS >= RHS ){
-		m_bg_circle = (y-y1)/(x-x1);
-		m = Math.tan(this.deg);
-		rad_diff = Math.atan(
-			(m_bg_circle - m) / (1 - (m_bg_circle * m))
-		)
-		if(rad_diff < 0){
-			rad_diff = -rad_diff;
+		x_diff = bound_x - ball_x;
+		y_diff = bound_y - ball_y;
+		
+		slope_bg = (bound_y - ball_y)/(bound_x - ball_x);
+
+		//Converting the slope to degrees
+		bg_slope_deg = to_deg(Math.atan(slope_bg));
+
+		//atan returns -90 to 90. Fixing that to 0 to 180.
+		if(bg_slope_deg < 0){
+			bg_slope_deg += 180;
+		}
+
+		//fixing deg to 0 - 360
+		if(y_diff > 0){
+			//ball is on top half.
+			//Top half angle is always 180+
+			bg_slope_deg += 180;
+
+			//Calculating difference
+			slope_diff = bg_slope_deg - this.deg;
+			
+			if(slope_diff > 0){
+				if(x_diff > 0){
+					this.deg -= 2 * slope_diff;
+				}else{
+					this.deg += 2 * slope_diff;
+				}
+			}else{
+				if(x_diff > 0){
+					this.deg += 2 * slope_diff;
+				}else{
+					this.deg -= 2 * slope_diff;
+				}
+			}
+
+			//Top haf angle reversal correction.
+			this.deg = this.deg - 180;
+		}else{
+			//ball is in the bottom half.
+			
+			//TODO: Verify bottom half. First half is fine.
+			//log("Bottom half");
+			slope_diff = bg_slope_deg - this.deg;
+			
+			/*
+			log("Ball slope angle " + this.deg);
+			log("bg slope angle " + bg_slope_deg);
+			*/
+
+			if(slope_diff < 0){
+				if(x_diff < 0){
+					this.deg -= 2 * slope_diff;
+				}else{
+					this.deg += 2 * slope_diff;
+				}
+			}else{
+				if(x_diff < 0){
+					this.deg += 2 * slope_diff;
+				}else{
+					this.deg -= 2 * slope_diff;
+				}
+			}
+			//log("Result " + this.deg);
+			
+			//Bottom half angle reversal correction.
+			this.deg = 180 + this.deg;
 		}
 		
-		var deg_diff = to_deg(rad_diff);
-		log(this.deg);
-		
-		log(to_deg(Math.atan(m_bg_circle)));
-		log("Deg Diff = " + JSON.stringify(deg_diff));
-		
-		var disp = to_deg(
-			Math.atan(
-				(-1)/(Math.tan(this.deg))
-			)
-		);
-		this.deg = this.deg % 360;
-		if(this.deg < 0){
-			this.deg = Math.abs(180 - Math.abs(this.deg));
-		}
-		
-		this.deg = disp - deg_diff;
-		this.deg = 330;
-		log(this.deg);
 	}
 	//Increment condition
 	this.x_ctr +=  Math.cos(to_rad(this.deg));
